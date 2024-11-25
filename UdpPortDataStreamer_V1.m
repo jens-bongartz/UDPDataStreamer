@@ -8,7 +8,9 @@ clear all; clc;
 # createFilter(f_abtast,f_HP,f_NO,f_TP)
 dataStream(1) = dataStreamClass("FBT","red",10,800,1,1); # externe Klasse
 # createFilter(f_abtast,f_HP,f_NO,f_TP)
-dataStream(1).createFilter(200,1,50,20);
+dataStream(1).createIIRFilter(200,4,50,20);
+dataStream(1).createFIRFilter(200,2,4,16);
+
 #dataStream(1).peakDetector  = 1;
 #dataStream(1).evalWindow    = 200;
 
@@ -18,7 +20,8 @@ inputPort.createSelector(dataStream);         # >> inputPort.streamSelector
 inputPort.createRegEx(dataStream);            # >> inputPort.regex_pattern
 
 # Globale Variablen zur Programmsteuerung
-global HP_filtered = 1 NO_filtered = 1 TP_filtered = 1 DQ_filtered = 0 DQ2_filtered = 0;
+global HP_filtered = 0 NO_filtered = 0 TP_filtered = 0 DQ_filtered = 0 DQ2_filtered = 0;
+global FIR_filtered = 1;
 global quit_prg = 0 clear_data = 0 save_data = 0 rec_data = 1;
 
 # Einstellwerte fuer die Programm-Performance [Sekunden]
@@ -75,8 +78,8 @@ if !isempty(inputPort)
       save_data = 0;
     endif
 
-    # SerialPort auslesen
-    # ==================
+    # Port auslesen
+    # =============
     s_toc = toc(serial_tic);
     if (s_toc > SerialPort_Time)
       [bytesAvailable,inChar] = inputPort.readPort();  # >> inputPort.inBuffer;

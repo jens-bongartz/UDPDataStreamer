@@ -13,9 +13,11 @@ classdef dataStreamClass < handle
         # Filter-Speicher
         HP_sp  = [0 0 0 0 0 0]; NO_sp  = [0 0 0 0 0 0]; TP_sp  = [0 0 0 0 0 0];
         DQ_sp  = [0 0 0 0 0 0]; DQ2_sp = [0 0 0 0 0 0];
+        FIR_sp = [0];
         # Filter-Koeffizienten
         HP_ko  = [0 0 0 0 0]; NO_ko   = [0 0 0 0 0]; TP_ko  = [0 0 0 0 0];
         DQ_ko  = [0 0 0 0 0]; DQ2_ko  = [0 0 0 0 0];
+        FIR_ko = [0];
 
         slopeDetector = 0; lastSample = 0; lastSlope = 1; lastMaxTime = 0;
         peakDetector = 0; peakThreshold = 0; peakTrigger = 0; lastPeakTime  = 0;
@@ -42,12 +44,17 @@ classdef dataStreamClass < handle
           self.ar_index = 1;
         endfunction
 
-        function createFilter(self,f_abtast,f_HP,f_NO,f_TP)
+        function createIIRFilter(self,f_abtast,f_HP,f_NO,f_TP)
           self.HP_ko = calcHPCoeff(f_abtast,f_HP);
           self.NO_ko = calcNotchCoeff(f_abtast,f_NO);
           self.TP_ko = calcTPCoeff(f_abtast,f_TP);
           self.DQ_ko  = [1 -1 0 0 0];                   # (x[n]-x[n-1])/1
           self.DQ2_ko = [1 0 -1 0 0];                   # (x[n]-x[n-2])/(2) (1)
+        endfunction
+
+        function createFIRFilter(self,fa,df,f1,f2)
+          self.FIR_ko = calcFIRCoeff(fa,df,f1,f2);
+          self.FIR_sp = zeros(1,length(self.FIR_ko));
         endfunction
 
         function addSample(self,sample,sample_t)
@@ -103,10 +110,14 @@ classdef dataStreamClass < handle
 
         function sample = doFilter(self,sample)
           # Statusvariablen ob Filter gesetzt sind
-          global HP_filtered NO_filtered TP_filtered DQ_filtered DQ2_filtered;
+          global HP_filtered NO_filtered TP_filtered DQ_filtered DQ2_filtered FIR_filtered;
           #  Am 30.10.2023 Reihenfolge der digitalen Filter verändert
           #  ist: NO > TP > HP
           #  war: HP > NO > TP
+          if (FIR_filtered)
+            self.FIR_sp = [sample self.FIR_sp(1:end-1)];
+            sample = dot(self.FIR_sp,self.FIR_ko);
+          endif
           if (NO_filtered)
             [sample,self.NO_sp] = biquadFilter(sample,self.NO_sp,self.NO_ko);
            endif
