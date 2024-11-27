@@ -7,8 +7,9 @@ clear all; clc;
 # obj = dataStreamClass(name,plcolor,dt,plotwidth,plot,filter)
 # createFilter(f_abtast,f_HP,f_NO,f_TP)
 dataStream(1) = dataStreamClass("FBT","red",10,800,1,1); # externe Klasse
-# createFilter(f_abtast,f_HP,f_NO,f_TP)
+# createIIRFilter(f_abtast,f_HP,f_NO,f_TP)
 dataStream(1).createIIRFilter(200,4,50,20);
+# createFIRFilter(f_abtast,df,f1,f2)
 dataStream(1).createFIRFilter(200,2,4,16);
 
 #dataStream(1).peakDetector  = 1;
